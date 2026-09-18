@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Plan a vacation spending envelope with live exchange-rate data." />
+    <title>Balance · Trip Budget Explorer</title>
+    <link rel="preconnect" href="https://api.frankfurter.dev" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="src/app.js"></script>
+  </head>
+  <body>
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Trip budget explorer</p>
+          <h1 id="page-title">Know what your trip budget means abroad.</h1>
+          <p class="intro">Turn a daily US-dollar target into a local-currency spending envelope using current public exchange-rate data.</p>
+        </div>
+
+        <form id="budget-form" class="planner-card">
+          <div class="field wide">
+            <label for="destination">Destination country</label>
+            <select id="destination" name="destination" required disabled>
+              <option value="">Loading destinations…</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="daily-budget">Daily budget (USD)</label>
+            <div class="input-with-prefix"><span>$</span><input id="daily-budget" name="dailyBudget" type="number" min="1" max="100000" step="1" value="100" required /></div>
+          </div>
+          <div class="field">
+            <label for="trip-days">Trip length</label>
+            <div class="input-with-suffix"><input id="trip-days" name="tripDays" type="number" min="1" max="365" step="1" value="7" required /><span>days</span></div>
+          </div>
+          <button id="submit-button" type="submit" disabled>Build my trip budget <span aria-hidden="true">→</span></button>
+          <p class="form-note">Rates are reference data and exclude card or bank fees.</p>
+        </form>
+      </section>
+
+      <section id="status" class="status" aria-live="polite" aria-atomic="true">
+        <span class="loader" aria-hidden="true"></span><p></p>
+      </section>
+
+      <section id="results" class="results" aria-live="polite" hidden>
+        <div class="result-heading">
+          <div><p class="eyebrow">Your spending guardrail</p><h2><span id="trip-days-copy"></span>-day plan for <span id="country-name"></span></h2></div>
+          <p id="rate-date" class="muted"></p>
+        </div>
+
+        <div class="summary-grid">
+          <article class="summary-card featured">
+            <p>Total trip envelope</p><strong id="local-total"></strong><span id="usd-total"></span>
+          </article>
+          <article class="summary-card">
+            <p>Daily target</p><strong id="local-daily"></strong><span id="usd-daily"></span>
+          </article>
+          <article class="summary-card">
+            <p>Current reference rate</p><strong id="current-rate"></strong><span>per US $1</span>
+          </article>
+          <article class="summary-card">
+            <p>30-day movement</p><strong id="rate-change"></strong><span id="change-context"></span>
+          </article>
+        </div>
+
+        <article class="chart-card">
+          <div class="chart-heading"><div><p class="eyebrow">Context, not prediction</p><h2>USD exchange-rate history</h2></div><p class="muted">Past 30 days</p></div>
+          <div id="chart" class="chart" role="img"></div>
+          <div class="chart-scale"><span id="chart-start"></span><span id="chart-end"></span></div>
+        </article>
+
+        <article id="activity-card" class="activity-card">
+          <div class="activity-mark" aria-hidden="true">↗</div>
+          <div>
+            <p class="eyebrow">A little inspiration</p>
+            <h2 id="activity-title"></h2>
+            <p id="activity-description" class="muted"></p>
+            <a id="activity-link" target="_blank" rel="noreferrer">Read the Wikivoyage guide <span aria-hidden="true">→</span></a>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <footer>
+      Exchange-rate data from <a href="https://frankfurter.dev/" target="_blank" rel="noreferrer">Frankfurter</a>
+      and travel ideas from <a href="https://en.wikivoyage.org/" target="_blank" rel="noreferrer">Wikivoyage</a>.
+      Educational tool only; not financial advice.
+    </footer>
+  </body>
+</html>
