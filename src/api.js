@@ -98,3 +98,41 @@ export async function getActivitySuggestion(destination, options = {}) {
     city,
   };
 }
+
+// new addition: public holiday api
+export async function getPublicHolidays(
+  countryCode,
+  year = new Date().getFullYear(),
+  options = {}
+) {
+  // if country code is not a 2 letter string
+  if (!/^[A-Z]{2}$/.test(countryCode)) {
+    throw new ApiError("Invalid country code.");
+  }
+
+  // if year not in the bounds of the API
+  if (!Number.isInteger(year) || year < 1900 || year > 2100) {
+    throw new ApiError("Invalid year.");
+  }
+
+  const url = `https://date.nager.at/api/v3/PublicHolidays/${year}/${countryCode}`;
+  const data = await requestJson(url, options);
+
+  if (!Array.isArray(data)) {
+    throw new ApiError("Holiday API returned an unexpected response.");
+  }
+
+  return data
+    .filter((holiday) =>
+      typeof holiday.date === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(holiday.date) &&
+      typeof holiday.name === "string" &&
+      typeof holiday.localName === "string"
+    )
+    .map((holiday) => ({
+      date: holiday.date,
+      name: holiday.name,
+      localName: holiday.localName,
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
+}
