@@ -78,6 +78,30 @@
             <a id="activity-link" target="_blank" rel="noreferrer">Read the Wikivoyage guide <span aria-hidden="true">→</span></a>
           </div>
         </article>
+
+        <section class="holiday-card" aria-labelledby="holiday-heading">
+          <div class="holiday-header">
+            <h3 id="holiday-heading">Upcoming Public Holidays</h3>
+            <p>Plan ahead for potential holiday expenses.</p>
+          </div>
+
+          <div id="holiday-list"></div>
+          <p id="holiday-status" role="status"></p>
+
+          <div class="holiday-budget">
+            <label for="holiday-spending">
+              Additional holiday spending (USD)
+            </label>
+            <input
+              type="number"
+              id="holiday-spending"
+              min="0"
+              step="1"
+              value="0"
+            />
+          </div>
+        </section>
+
       </section>
     </main>
 
