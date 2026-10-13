@@ -33,6 +33,18 @@
             <label for="trip-days">Trip length</label>
             <div class="input-with-suffix"><input id="trip-days" name="tripDays" type="number" min="1" max="365" step="1" value="7" required /><span>days</span></div>
           </div>
+          <div class="holiday-budget">
+            <label for="holiday-spending">
+              Additional holiday spending (USD)
+            </label>
+            <input
+              type="number"
+              id="holiday-spending"
+              min="0"
+              step="1"
+              value="0"
+            />
+          </div>
           <button id="submit-button" type="submit" disabled>Build my trip budget <span aria-hidden="true">→</span></button>
           <p class="form-note">Rates are reference data and exclude card or bank fees.</p>
         </form>
@@ -78,6 +90,17 @@
             <a id="activity-link" target="_blank" rel="noreferrer">Read the Wikivoyage guide <span aria-hidden="true">→</span></a>
           </div>
         </article>
+
+        <section class="holiday-card" aria-labelledby="holiday-heading">
+          <div class="holiday-header">
+            <h3 id="holiday-heading">Upcoming Public Holidays</h3>
+            <p>Plan ahead for potential holiday expenses.</p>
+          </div>
+
+          <div id="holiday-list"></div>
+          <p id="holiday-status" role="status"></p>
+        </section>
+
       </section>
     </main>
 

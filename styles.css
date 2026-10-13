@@ -111,3 +111,106 @@ footer a { color: var(--green); }
   .chart { height: 190px; }
   .activity-card { grid-template-columns: 1fr; padding: 23px 20px; }
 }
+
+
+/* Holiday Budget Planner */
+
+.holiday-card {
+  margin-top: 24px;
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+}
+
+.holiday-header {
+  margin-bottom: 20px;
+}
+
+.holiday-header h3 {
+  margin: 0 0 8px;
+  font-size: 1.35rem;
+  color: #183c36;
+}
+
+.holiday-header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+#holiday-list {
+  display: grid;
+  gap: 10px;
+}
+
+.holiday-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  background: #f5f9f7;
+  border: 1px solid #e2ede7;
+  border-radius: 12px;
+}
+
+.holiday-item strong {
+  color: #183c36;
+  font-size: 0.95rem;
+}
+
+.holiday-item span {
+  color: #64748b;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+#holiday-status {
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
+#holiday-status:empty {
+  display: none;
+}
+
+.holiday-budget {
+  display: grid;
+  gap: 10px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.holiday-budget label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #183c36;
+}
+
+.holiday-budget input {
+  width: 100%;
+  max-width: 240px;
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font: inherit;
+}
+
+.holiday-budget input:focus {
+  outline: 2px solid #259b76;
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .holiday-card {
+    padding: 20px;
+  }
+
+  .holiday-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { calculateBudget, chartPoints, formatMoney, percentChange } from "../src/budget.js";
+import { calculateBudget, calculateHolidayBudget, chartPoints, formatMoney, percentChange } from "../src/budget.js";
 
 test("calculateBudget converts daily and full-trip amounts", () => {
   assert.deepEqual(calculateBudget(100, 7, 0.85), {
@@ -28,4 +28,27 @@ test("chartPoints keeps every point inside the view box", () => {
 
 test("formatMoney uses the requested ISO currency", () => {
   assert.match(formatMoney(12.5, "EUR", "en-US"), /€12\.50/);
+});
+
+test("calculateHolidayBudget includes additional spending", () => {
+  const result = calculateHolidayBudget(100, 7, 150, 50);
+
+  assert.equal(result.usdTotal, 700);
+  assert.equal(result.holidaySpendingUsd, 50);
+  assert.equal(result.adjustedUsdTotal, 750);
+  assert.equal(result.adjustedLocalTotal, 112500);
+});
+
+test("calculateHolidayBudget handles zero additional spending", () => {
+  const result = calculateHolidayBudget(100, 7, 150, 0);
+
+  assert.equal(result.adjustedUsdTotal, 700);
+  assert.equal(result.adjustedLocalTotal, 105000);
+});
+
+test("calculateHolidayBudget rejects negative spending", () => {
+  assert.throws(
+    () => calculateHolidayBudget(100, 7, 150, -50),
+    RangeError
+  );
 });

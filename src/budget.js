@@ -40,3 +40,26 @@ export function chartPoints(rates, width = 800, height = 220, padding = 10) {
   }));
 }
 
+export function calculateHolidayBudget(
+  dailyUsd,
+  days,
+  rate,
+  additionalSpending = 0
+) {
+  const base = calculateBudget(dailyUsd, days, rate);
+  const extra = Number(additionalSpending);
+
+  if (!Number.isFinite(extra) || extra < 0) {
+    throw new RangeError(
+      "Additional holiday spending must be a non-negative number."
+    );
+  }
+
+  return {
+    ...base,
+    holidaySpendingUsd: extra,
+    holidaySpendingLocal: extra * rate,
+    adjustedUsdTotal: base.usdTotal + extra,
+    adjustedLocalTotal: base.localTotal + extra * rate,
+  };
+}

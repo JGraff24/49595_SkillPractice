@@ -1,5 +1,5 @@
-import { ApiError, getActivitySuggestion, getCurrencies, getRateHistory } from "./api.js";
-import { calculateBudget, chartPoints, formatMoney, percentChange } from "./budget.js";
+import { ApiError, getActivitySuggestion, getCurrencies, getRateHistory, getPublicHolidays } from "./api.js";
+import { calculateBudget, chartPoints, formatMoney, percentChange, calculateHolidayBudget } from "./budget.js";
 
 const DESTINATIONS = [
   { code: "AR", country: "Argentina", currency: "ARS", city: "Buenos Aires", latitude: -34.6037, longitude: -58.3816 },
@@ -58,6 +58,9 @@ const elements = {
   activityTitle: document.querySelector("#activity-title"),
   activityDescription: document.querySelector("#activity-description"),
   activityLink: document.querySelector("#activity-link"),
+  holidayList: document.querySelector("#holiday-list"),
+  holidayStatus: document.querySelector("#holiday-status"),
+  holidaySpending: document.querySelector("#holiday-spending"),
 };
 
 let currencies = [];
@@ -117,17 +120,62 @@ function renderActivity(activity, destination) {
   elements.activityLink.hidden = false;
 }
 
+
+function renderHolidays(holidays) {
+  elements.holidayList.replaceChildren();
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const upcoming = holidays
+    .filter((holiday) => holiday.date >= today)
+    .slice(0, 5);
+
+  if (upcoming.length === 0) {
+    elements.holidayStatus.textContent =
+      "No upcoming holidays found for this year.";
+    return;
+  }
+
+  elements.holidayStatus.textContent = "";
+
+  upcoming.forEach((holiday) => {
+    const item = document.createElement("div");
+    item.className = "holiday-item";
+
+    const name = document.createElement("strong");
+    name.textContent = holiday.name;
+
+    const date = document.createElement("span");
+    date.textContent = new Date(
+      `${holiday.date}T00:00:00`
+    ).toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric"
+    });
+
+    item.append(name, date);
+    elements.holidayList.append(item);
+  });
+}
+
 function render(rates, destination, activity) {
   const code = destination.currency;
   const latest = rates.at(-1);
-  const budget = calculateBudget(Number(elements.daily.value), Number(elements.days.value), latest.rate);
+  const budget = calculateHolidayBudget(
+    Number(elements.daily.value),
+    Number(elements.days.value),
+    latest.rate,
+    Number(elements.holidaySpending.value)
+  );
+  // const budget = calculateBudget(Number(elements.daily.value), Number(elements.days.value), latest.rate);
   const change = percentChange(rates[0].rate, latest.rate);
 
   elements.tripDaysCopy.textContent = elements.days.value;
   elements.countryName.textContent = destination.country;
   elements.rateDate.textContent = `Latest rate: ${formatDate(latest.date)}`;
-  elements.localTotal.textContent = formatMoney(budget.localTotal, code);
-  elements.usdTotal.textContent = `${formatMoney(budget.usdTotal, "USD")} planned`;
+  elements.localTotal.textContent = formatMoney(budget.adjustedLocalTotal, code);
+  elements.usdTotal.textContent = `${formatMoney(budget.adjustedUsdTotal, "USD")} planned`;
   elements.localDaily.textContent = formatMoney(budget.localDaily, code);
   elements.usdDaily.textContent = `${formatMoney(budget.usdDaily, "USD")} per day`;
   elements.currentRate.textContent = formatMoney(latest.rate, code);
@@ -163,30 +211,98 @@ async function initialize() {
   }
 }
 
+
 elements.form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!elements.form.reportValidity()) return;
+  const extra = elements.holidaySpending;
+
+  if (
+    extra.value.trim() === "" ||
+    !Number.isFinite(Number(extra.value)) ||
+    Number(extra.value) < 0
+  ) {
+    extra.setCustomValidity("Enter a valid holiday spending amount.");
+    extra.reportValidity();
+    return;
+  }
+
+  extra.setCustomValidity("");
+
   activeController?.abort();
   activeController = new AbortController();
+  const controller = activeController;
+
   elements.results.hidden = true;
-  const destination = DESTINATIONS.find((item) => item.code === elements.destination.value);
+
+  const destination = DESTINATIONS.find(
+    (item) => item.code === elements.destination.value
+  );
+
   if (!destination) {
     setStatus("Choose a supported destination country.", "error");
     return;
   }
-  setStatus(`Building a budget and finding inspiration for ${destination.country}…`, "loading");
+
+  setStatus(
+    `Building a budget and finding inspiration for ${destination.country}…`,
+    "loading"
+  );
+
   try {
-    const [ratesResult, activityResult] = await Promise.allSettled([
-      getRateHistory(destination.currency, { signal: activeController.signal }),
-      getActivitySuggestion(destination, { signal: activeController.signal }),
-    ]);
-    if (ratesResult.status === "rejected") throw ratesResult.reason;
-    const activity = activityResult.status === "fulfilled" ? activityResult.value : null;
+    const [ratesResult, activityResult, holidayResult] =
+      await Promise.allSettled([
+        getRateHistory(destination.currency, {
+          signal: controller.signal
+        }),
+        getActivitySuggestion(destination, {
+          signal: controller.signal
+        }),
+        getPublicHolidays(destination.code, new Date().getFullYear(), {
+          signal: controller.signal
+        }),
+      ]);
+
+    // Prevent an older request from overwriting newer results.
+    if (controller !== activeController || controller.signal.aborted) {
+      return;
+    }
+
+    if (ratesResult.status === "rejected") {
+      throw ratesResult.reason;
+    }
+
+    const activity =
+      activityResult.status === "fulfilled"
+        ? activityResult.value
+        : null;
+
+    // Render the original trip budget and activity suggestion.
     render(ratesResult.value, destination, activity);
+
+    // Render holidays independently.
+    if (holidayResult.status === "fulfilled") {
+      renderHolidays(holidayResult.value);
+    } else {
+      elements.holidayList.replaceChildren();
+      elements.holidayStatus.textContent =
+        "Holiday information is currently unavailable.";
+    }
+
   } catch (error) {
-    if (error.name === "AbortError") return;
-    setStatus(error instanceof ApiError ? error.message : "Something unexpected happened. Please try again.", "error");
+    if (controller !== activeController || error.name === "AbortError") {
+      return;
+    }
+
+    setStatus(
+      error instanceof ApiError
+        ? error.message
+        : "Something unexpected happened. Please try again.",
+      "error"
+    );
   }
 });
+
+// elements.holidaySpending.addEventListener("input", updateHolidayBudget);
 
 initialize();
