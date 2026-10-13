@@ -1,5 +1,5 @@
 import { ApiError, getActivitySuggestion, getCurrencies, getRateHistory, getPublicHolidays } from "./api.js";
-import { calculateBudget, chartPoints, formatMoney, percentChange } from "./budget.js";
+import { calculateBudget, chartPoints, formatMoney, percentChange, calculateHolidayBudget } from "./budget.js";
 
 const DESTINATIONS = [
   { code: "AR", country: "Argentina", currency: "ARS", city: "Buenos Aires", latitude: -34.6037, longitude: -58.3816 },
@@ -159,18 +159,23 @@ function renderHolidays(holidays) {
   });
 }
 
-
 function render(rates, destination, activity) {
   const code = destination.currency;
   const latest = rates.at(-1);
-  const budget = calculateBudget(Number(elements.daily.value), Number(elements.days.value), latest.rate);
+  const budget = calculateHolidayBudget(
+    Number(elements.daily.value),
+    Number(elements.days.value),
+    latest.rate,
+    Number(elements.holidaySpending.value)
+  );
+  // const budget = calculateBudget(Number(elements.daily.value), Number(elements.days.value), latest.rate);
   const change = percentChange(rates[0].rate, latest.rate);
 
   elements.tripDaysCopy.textContent = elements.days.value;
   elements.countryName.textContent = destination.country;
   elements.rateDate.textContent = `Latest rate: ${formatDate(latest.date)}`;
-  elements.localTotal.textContent = formatMoney(budget.localTotal, code);
-  elements.usdTotal.textContent = `${formatMoney(budget.usdTotal, "USD")} planned`;
+  elements.localTotal.textContent = formatMoney(budget.adjustedLocalTotal, code);
+  elements.usdTotal.textContent = `${formatMoney(budget.adjustedUsdTotal, "USD")} planned`;
   elements.localDaily.textContent = formatMoney(budget.localDaily, code);
   elements.usdDaily.textContent = `${formatMoney(budget.usdDaily, "USD")} per day`;
   elements.currentRate.textContent = formatMoney(latest.rate, code);
@@ -210,6 +215,19 @@ async function initialize() {
 elements.form.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!elements.form.reportValidity()) return;
+  const extra = elements.holidaySpending;
+
+  if (
+    extra.value.trim() === "" ||
+    !Number.isFinite(Number(extra.value)) ||
+    Number(extra.value) < 0
+  ) {
+    extra.setCustomValidity("Enter a valid holiday spending amount.");
+    extra.reportValidity();
+    return;
+  }
+
+  extra.setCustomValidity("");
 
   activeController?.abort();
   activeController = new AbortController();
@@ -285,5 +303,6 @@ elements.form.addEventListener("submit", async (event) => {
   }
 });
 
+// elements.holidaySpending.addEventListener("input", updateHolidayBudget);
 
 initialize();

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { ApiError, getActivitySuggestion, getCurrencies, getRateHistory } from "../src/api.js";
+import { ApiError, getActivitySuggestion, getCurrencies, getRateHistory, getPublicHolidays } from "../src/api.js";
 
 function jsonResponse(body, { ok = true, status = 200 } = {}) {
   return { ok, status, json: async () => body };
@@ -93,4 +93,59 @@ test("getActivitySuggestion returns null when no usable guide is available", asy
     { fetchImpl: async () => jsonResponse({ batchcomplete: "" }) },
   );
   assert.equal(activity, null);
+});
+
+
+test("getPublicHolidays fetches and transforms holiday data", async () => {
+  const mockFetch = async (url) => {
+    assert.equal(
+      url,
+      "https://date.nager.at/api/v3/PublicHolidays/2026/JP"
+    );
+
+    return {
+      ok: true,
+      json: async () => [
+        {
+          date: "2026-11-03",
+          name: "Culture Day",
+          localName: "文化の日"
+        },
+        {
+          date: "2026-01-01",
+          name: "New Year's Day",
+          localName: "元日"
+        }
+      ]
+    };
+  };
+
+  const holidays = await getPublicHolidays("JP", 2026, {
+    fetchImpl: mockFetch
+  });
+
+  assert.equal(holidays.length, 2);
+  assert.equal(holidays[0].name, "New Year's Day");
+  assert.equal(holidays[1].name, "Culture Day");
+});
+
+test("getPublicHolidays rejects invalid country codes", async () => {
+  await assert.rejects(
+    getPublicHolidays("INVALID", 2026),
+    ApiError
+  );
+});
+
+test("getPublicHolidays rejects invalid API responses", async () => {
+  const mockFetch = async () => ({
+    ok: true,
+    json: async () => ({ error: "Unexpected response" })
+  });
+
+  await assert.rejects(
+    getPublicHolidays("JP", 2026, {
+      fetchImpl: mockFetch
+    }),
+    ApiError
+  );
 });
